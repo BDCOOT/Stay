@@ -1,6 +1,10 @@
 package stay.app.app.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.querydsl.QPageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import stay.app.app.models.*;
@@ -33,9 +37,10 @@ public class StayService {
         }
     }
 
-    public List<Stay> getStayList() throws Exception{
+    public List<Stay> getAllowedSortStayList(boolean allowed, Integer offset) throws Exception{
         try{
-            return stayRepository.findAll();
+            Pageable page = PageRequest.of(offset, 2);
+            return stayRepository.findAllByAllowedOrderByCreatedAtDesc(allowed, page);
         }catch(Exception e){
             throw new Exception(e);
         }
@@ -50,24 +55,43 @@ public class StayService {
     }
 
 
-    public List<Stay> getAllStayList(boolean allowed) throws Exception{
+    public List<Stay> getAllStayListAllowedforUser(Integer offset) throws Exception{
         try{
-            return stayRepository.findAllByAllowed(allowed);
+            Pageable pageable = PageRequest.of(offset, 2);
+            return stayRepository.findAllByAllowedOrderByRatingDesc(true, pageable);
         }catch(Exception e){
             throw new Exception(e);
         }
     }
 
 
-    public List<Stay> getStayTypeList(String stayType) throws Exception{
+    public List<Stay> getStayTypeList(String stayType, Integer offset) throws Exception{
         try{
-            return stayRepository.findAllByStayTypeAndAllowedOrderByStayTypeDesc(stayType, true);
+            Pageable page = PageRequest.of(offset, 2);
+            return stayRepository.findAllByStayTypeAndAllowedOrderByCreatedAtDesc(stayType, true, page);
         }catch(Exception e){
             throw new Exception(e);
         }
 
     }
 
+    @Transactional
+    public void updateStaysFalse(List<String> idList) throws Exception{
+        try{
+            stayRepository.updateAllowedByStayIdList(false, idList);
+        }catch(Exception e){
+            throw new Exception(e);
+        }
+    }
+
+    @Transactional
+    public void updateRoomsFalse(List<String> idList) throws Exception{
+        try{
+           roomRepository.updateAllowedByStayIdList(false, idList);
+        }catch(Exception e){
+            throw new Exception(e);
+        }
+    }
 
     public Stay findOneByUserId(String userid) throws Exception{
         try{
@@ -106,84 +130,66 @@ public class StayService {
     }
 
 
-    public List<Room> getRoomListByStayId(String stayId) throws Exception{
+    //스테이아이디 포함안했을때
+    public List<Room> getCheckInAvailableRooms(LocalDateTime checkIn, LocalDateTime checkOut,String limited, Integer offset) throws Exception{
         try{
-            return roomRepository.findAllByStayId(stayId);
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.checkAvailableRoom(checkIn, checkOut,limited, page);
         }catch(Exception e){
             throw new Exception(e);
         }
     }
 
-    public List<Room> getBookableRoomList() throws Exception{
+    public List<Room> getCheckInAvailableRoomsAndPrice(LocalDateTime checkIn, LocalDateTime checkOut, String minPrice, String maxPrice, String limited, Integer offset) throws Exception{
         try{
-            boolean reservationStatus = true;
-            boolean allowed = true;
-            return roomRepository.findAllByReservationStatusAndAllowed(reservationStatus, allowed);
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.checkAvailableRoomAndPrice(checkIn, checkOut, minPrice, maxPrice, limited, page);
         }catch(Exception e){
             throw new Exception(e);
         }
     }
 
-
-    public List<Room> getBookalbleRoomByStayId(String stayId) throws Exception{
+    public List<Room> getMinPriceSortList(LocalDateTime checkIn, LocalDateTime checkOut, String minPrice, String limited, Integer offset) throws Exception{
         try{
-            boolean reservationStatus = true;
-            boolean allowed = true;
-            return roomRepository.findAllByStayIdAndReservationStatusAndAllowed(stayId, reservationStatus, allowed);
-        }catch(Exception e){
-            throw new Exception(e);
-        }
-    }
-
-    public List<Room> getCheckInAvailableRooms(LocalDateTime checkIn, LocalDateTime checkOut,String limited) throws Exception{
-        try{
-            return roomRepository.checkAvailableRoom(checkIn, checkOut,limited);
-        }catch(Exception e){
-            throw new Exception(e);
-        }
-    }
-
-    public List<Room> getCheckInAvailableRoomsAndPrice(LocalDateTime checkIn, LocalDateTime checkOut, String minPrice, String maxPrice, String limited) throws Exception{
-        try{
-            return roomRepository.checkAvailableRoomAndPrice(checkIn, checkOut, minPrice, maxPrice, limited);
-        }catch(Exception e){
-            throw new Exception(e);
-        }
-    }
-
-    public List<Room> getSortByPriceRoom(int limited, int minPrice, int maxPrice) throws Exception{
-        try{
-            boolean reservationStatus = true;
-            boolean allowed = true;
-            return roomRepository.findAllByLimitedGreaterThanEqualAndPriceGreaterThanEqualAndPriceLessThanEqualAndReservationStatusAndAllowed(limited, minPrice, maxPrice, reservationStatus, allowed);
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.minPriceSortList(checkIn, checkOut, minPrice, limited, page);
         }catch(Exception e){
             throw new Exception(e);
         }
     }
 
 
-    public List<Room> getSortRoomByPriceAndStayId(int limited, String stayId, int minPrice, int maxPrice) throws Exception{
+    // 스테이아이디 포함했을때
+    public List<Room> getCheckInAvailableRoomsByStayId(String stayId, LocalDateTime checkIn, LocalDateTime checkOut,String limited, Integer offset) throws Exception{
         try{
-            boolean reservationStatus = true;
-            boolean allowed = true;
-            return roomRepository.findAllByLimitedGreaterThanEqualAndStayIdAndPriceGreaterThanAndPriceLessThanAndReservationStatusAndAllowed(limited, stayId, minPrice, maxPrice, reservationStatus, allowed);
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.checkAvailableRoomByStayId(stayId, checkIn, checkOut, limited, page);
         }catch(Exception e){
             throw new Exception(e);
         }
     }
 
+    public List<Room> getCheckInAvailableRoomsAndPriceByStayId(String stayId, LocalDateTime checkIn, LocalDateTime checkOut, String minPrice, String maxPrice, String limited, Integer offset) throws Exception{
+        try{
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.checkAvailableRoomAndPriceByStayId(stayId, checkIn, checkOut, minPrice, maxPrice, limited, page);
+        }catch(Exception e){
+            throw new Exception(e);
+        }
+    }
+
+    public List<Room> getMinPriceSortListByStayId(String stayId, LocalDateTime checkIn, LocalDateTime checkOut, String minPrice, String limited, Integer offset) throws Exception{
+        try{
+            Pageable page = PageRequest.of(offset, 2);
+            return roomRepository.minPriceSortListByStayId(stayId, checkIn, checkOut, minPrice, limited, page);
+        }catch(Exception e){
+            throw new Exception(e);
+        }
+    }
 
     public Mileage findOneMiliageByUserId(String userId) throws Exception{
         try{
             return mileageRepository.findOneByUserId(userId);
-        }catch(Exception e){
-            throw new Exception(e);
-        }
-    }
-
-    public List<Room> checkAvailableRoom(LocalDateTime checkIn, LocalDateTime checkOut, String limited) throws Exception{
-        try{
-            return roomRepository.checkAvailableRoom(checkIn, checkOut, limited);
         }catch(Exception e){
             throw new Exception(e);
         }
@@ -247,7 +253,7 @@ public class StayService {
         }
     }
 
-
+    @Transactional
     public Reservation findOneReservationById(String id) throws Exception{
         try{
             return reservationRepository.findOneById(id);
@@ -258,9 +264,10 @@ public class StayService {
 
 
 
-    public List<Reservation> findAllByUserId(String userId) throws Exception{
+    public List<Reservation> findAllByUserId(String userId, Integer offset) throws Exception{
         try{
-            return reservationRepository.findAllByUserId(userId);
+            Pageable page = PageRequest.of(offset, 2);
+            return reservationRepository.findAllByUserIdOrderByCreatedAtDesc(userId, page);
         }catch(Exception e){
             throw new Exception(e);
         }
@@ -275,13 +282,6 @@ public class StayService {
         }
     }
 
-//    public List<String> getRoomIdsByStayIds(List<String> stayIds) throws Exception{
-//        try{
-//            return roomRepository.findAllRoomIdsByStayIdIn(stayIds);
-//        }catch(Exception e){
-//            throw new Exception(e);
-//        }
-//    }
 
 
     @Transactional
@@ -305,9 +305,11 @@ public class StayService {
     }
 
 
-    public List<Reservation> getReservationListByStayId(String stayId) throws Exception{
+    public List<Reservation> getReservationListByStayId(String stayId, Integer offset) throws Exception{
         try{
-            return reservationRepository.findAllByStayId(stayId);
+            Pageable page = PageRequest.of(offset, 2);
+            System.out.println(page);
+            return reservationRepository.findAllByStayIdOrderByCreatedAtDesc(stayId, page);
         }catch(Exception e){
             throw new Exception(e);
         }
@@ -330,14 +332,7 @@ public class StayService {
         }
     }
 
-//    @Transactional
-//    public void deleteRoomsByStayId(String stayId) throws Exception {
-//        try{
-//            roomRepository.deleteAllByStayId(stayId);
-//        }catch(Exception e){
-//            throw new Exception(e);
-//        }
-//    }
+
 
     @Transactional
     public void deleteRoomList(List<String> stayIdsList) throws Exception{
@@ -358,10 +353,3 @@ public class StayService {
     }
 }//class
 
-//    @Transactional
-//    public void rservationRoom(Reservation reservation) throws Exception{
-//        try{
-//        }catch(Exception e){
-//            throw new Exception(e);
-//        }
-//    }

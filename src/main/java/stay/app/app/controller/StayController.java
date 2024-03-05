@@ -3,14 +3,17 @@ package stay.app.app.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import stay.app.app.models.*;
 import stay.app.app.service.StayService;
 import stay.app.app.service.UserService;
 import stay.app.app.utils.GeneratedId;
+import stay.app.app.utils.ImageRegister;
 import stay.app.app.utils.Jwt;
 
 import java.time.LocalDate;
@@ -28,13 +31,15 @@ import java.util.Map;
 public class StayController {
 
     private final StayService stayService;
-    private final UserService userService;
 
     private final GeneratedId generatedId;
     private final Jwt jwt;
+    private final ImageRegister imageRegister;
 
     @PostMapping("/add/room")
-    public ResponseEntity<Object> addRoom(@RequestHeader String authorization, @RequestBody Room req){
+    public ResponseEntity<Object> addRoom(@RequestHeader String authorization,
+                                          @ModelAttribute Room req,
+                                          @RequestPart(required = false) MultipartFile[] image){
         Map<String, String> map = new HashMap<>();
         try{
             String shortUUID = generatedId.shortUUID();
@@ -47,6 +52,15 @@ public class StayController {
             if(!(stay.getUserId().equals(decodedToeken))){
                 map.put("result", "숙소 주인만 등록할 수 있습니다.");
                 return new ResponseEntity<>(map,HttpStatus.OK);
+            }
+
+            if(image != null){
+                List<String> images = imageRegister.CreateImages(image);
+                String multiImages = String.join(",", images);
+
+                req.setImg(multiImages);
+            }else{
+                req.setImg(null);
             }
 
             stayService.addRoom(req);
@@ -109,19 +123,30 @@ public class StayController {
     }
 
 
-    @GetMapping("/stay/list")
-    public ResponseEntity<Object> stayList(@RequestParam (value="stayType", required=false) String stayType)throws Exception{
+    @GetMapping("/list")
+    public ResponseEntity<Object> stayList(@RequestParam (value="stayType") String stayType,
+                                        @RequestParam Integer page)throws Exception{
         Map<String, Object> map = new HashMap<>();
 
         try{
-            boolean allowed = true;
-            if(!(stayType.equals(""))){
-                List<Stay> stayList = stayService.getStayTypeList(stayType);
+            //Pageable을 사용할 때 Page 수 표기 로직
+            Integer offset = 0;
+            if(page > 1){
+                offset = page-1;
+            }
+
+            if(stayType == null) {
+                map.put("result", "stayType을 입력해주세요.");
+                return new ResponseEntity<>(map, HttpStatus.OK);
+            }
+
+            if(stayType.equals("all")){
+                List<Stay> stayList = stayService.getAllStayListAllowedforUser(offset);
                 map.put("result", stayList);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-            List<Stay> stayList = stayService.getAllStayList(allowed);
+            List<Stay> stayList = stayService.getStayTypeList(stayType, page);
 
             map.put("result", stayList);
         }catch(Exception e){
@@ -132,6 +157,7 @@ public class StayController {
 
     @GetMapping("/room/list")
     public ResponseEntity<Object> getRoomList(@RequestParam(required = false) String stayId,
+                                              @RequestParam Integer page,
                                               @RequestParam String guestNum,
                                                 @RequestParam(required = false) String minPrice,
                                                 @RequestParam(required = false) String maxPrice,
@@ -141,23 +167,56 @@ public class StayController {
         Map<String, Object> map = new HashMap<>();
 
         try{
-            
+            Integer offset = 0;
+            if(page > 1 ){
+                offset = page-1;
+            }
+
+
+            if(stayId == null){
             if(minPrice == null && maxPrice == null){
                 //둘다 가격설정 안했을 경우
-                List<Room> checkInAvailableroomList = stayService.getCheckInAvailableRooms(checkIn, checkOut, guestNum);
+                List<Room> checkInAvailableroomList = stayService.getCheckInAvailableRooms(checkIn, checkOut, guestNum, offset);
                 map.put("result", checkInAvailableroomList);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }else if(minPrice != null && maxPrice != null){
                 //둘다 가격설정 했을 경우
-                System.out.println("여깅에요");
-                List<Room> checkInAvailableroomListAndPrice = stayService.getCheckInAvailableRoomsAndPrice(checkIn, checkOut,minPrice,maxPrice, guestNum);
+                List<Room> checkInAvailableroomListAndPrice = stayService.getCheckInAvailableRoomsAndPrice(checkIn, checkOut,minPrice,maxPrice, guestNum, offset);
                 map.put("result", checkInAvailableroomListAndPrice);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }else if(minPrice != null && maxPrice == null){
                 //최소금액만 설정한 경우
+                List<Room> minPriceSortList = stayService.getMinPriceSortList(checkIn, checkOut, minPrice, guestNum, offset);
+                map.put("result", minPriceSortList);
+                return new ResponseEntity<>(map, HttpStatus.OK);
             }else{
                 map.put("result", "정의되지 않은 오류입니다.");
+                }
             }
+
+            if(stayId != null){
+                if(minPrice == null && maxPrice == null){
+                    //둘다 가격설정 안했을 경우
+                    List<Room> checkInAvailableroomList = stayService.getCheckInAvailableRoomsByStayId(stayId, checkIn, checkOut, guestNum, offset);
+                    map.put("result", checkInAvailableroomList);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                }else if(minPrice != null && maxPrice != null){
+                    //둘다 가격설정 했을 경우
+                    List<Room> checkInAvailableroomListAndPrice = stayService.getCheckInAvailableRoomsAndPriceByStayId(stayId, checkIn, checkOut,minPrice,maxPrice, guestNum, offset);
+                    map.put("result", checkInAvailableroomListAndPrice);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                }else if(minPrice != null && maxPrice == null){
+                    //최소금액만 설정한 경우
+                    List<Room> minPriceSortList = stayService.getMinPriceSortListByStayId(stayId, checkIn, checkOut, minPrice, guestNum, offset);
+                    map.put("result", minPriceSortList);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                }else{
+                    map.put("result", "정의되지 않은 오류입니다.");
+                }
+            }
+
+
+
         }catch(Exception e){
             map.put("error", e.toString());
         }
@@ -213,21 +272,28 @@ public class StayController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-    @PostMapping("/reservation/list")
+    @GetMapping("/reservation/list")
     public ResponseEntity<Object> reservationList(@RequestHeader String authorization,
-                                                  @RequestBody Stay req){
+                                                  @RequestParam String stayId,
+                                                  @RequestParam Integer page){
         Map<String, Object> map = new HashMap<>();
         try{
+            Integer offset = 0;
+            if(page > 1 ){
+                offset = page-1;
+            }
+            System.out.println(offset);
+            System.out.println(page);
+
             String decodedToken = jwt.VerifyToken(authorization);
 
-            Stay stay = stayService.findOneById(req.getId());
+            Stay stay = stayService.findOneById(stayId);
 
             if(!(stay.getUserId().equals(decodedToken))){
                 map.put("error", "접근 권한이 없습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
-
-            List<Reservation> reservationList = stayService.getReservationListByStayId(req.getId());
+            List<Reservation> reservationList = stayService.getReservationListByStayId(stayId, offset);
             map.put("result", reservationList);
         }catch(Exception e){
             map.put("error", e.toString());
@@ -256,7 +322,6 @@ public class StayController {
                 map.put("result", String.valueOf(revenue));
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
-
 
             int revenue = stayService.revenueSortDate(stayId, startDate, endDate);
             map.put("result", String.valueOf(revenue));

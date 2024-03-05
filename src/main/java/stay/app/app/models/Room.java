@@ -15,7 +15,6 @@ public class Room extends BaseEntity{
 
     @Id
     private String id;
-//    @Column(name = "stay_id")
     private String stayId;
     private String roomName;
     private int bed;

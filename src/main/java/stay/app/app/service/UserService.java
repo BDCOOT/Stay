@@ -74,6 +74,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public User findOneByUserId(String user_id) throws Exception{
         try{
             return userRepository.findOneByUserId(user_id);

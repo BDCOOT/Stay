@@ -1,5 +1,6 @@
 package stay.app.app.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,9 +16,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
 
     Reservation findOneById(String id);
 
-    List<Reservation> findAllByUserId(String userId);
+    List<Reservation> findAllByUserIdOrderByCreatedAtDesc(String userId, Pageable page);
 
-    List<Reservation> findAllByStayId(String stayId);
+    List<Reservation> findAllByStayIdOrderByCreatedAtDesc(String stayId, Pageable page);
 
     int countByUserId(String userId);
 

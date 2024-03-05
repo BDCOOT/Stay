@@ -4,9 +4,11 @@ import lombok.Generated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.parser.Authorization;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import stay.app.app.models.*;
 import stay.app.app.repository.UserRepository;
 import stay.app.app.service.CommentService;
@@ -14,6 +16,7 @@ import stay.app.app.service.StayService;
 import stay.app.app.service.UserService;
 import stay.app.app.utils.Bcrypt;
 import stay.app.app.utils.GeneratedId;
+import stay.app.app.utils.ImageRegister;
 import stay.app.app.utils.Jwt;
 
 import java.util.*;
@@ -29,6 +32,7 @@ public class UserController {
     private final StayService stayService;
     private final CommentService commentService;
 
+    private final ImageRegister imageRegister;
     private final GeneratedId generatedId;
     private final Jwt jwt;
     private final Bcrypt bcrypt;
@@ -44,7 +48,7 @@ public class UserController {
             req.setAppKey(hashPassword);
             req.setGrade("bronze");
             req.setUserType("일반회원");
-
+            req.setBanned(false);
 
             userService.createMileage(req.getUserId());
             userService.saveUser(req);
@@ -108,6 +112,7 @@ public class UserController {
      public ResponseEntity<Object> getUserInfo(@RequestHeader String authorization) throws Exception {
          Map<String, Object> map = new HashMap<>();
         try{
+
             String decodedToken = jwt.VerifyToken(authorization);
 
             User user = userService.findOneByUserId(decodedToken);
@@ -120,7 +125,8 @@ public class UserController {
 
             Mileage mileage = stayService.findOneMiliageByUserId(decodedToken);
 
-            List<Reservation> reservationList = stayService.findAllByUserId(decodedToken);
+            int offset = 1;
+            List<Reservation> reservationList = stayService.findAllByUserId(decodedToken, offset);
             int total_amount = 0;
             for(Reservation reservation : reservationList){
                 total_amount += reservation.getPrice();
@@ -170,30 +176,6 @@ public class UserController {
          return new ResponseEntity<>(map, HttpStatus.OK);
      }
 
-//     @PostMapping("/apply/seller")
-//    public ResponseEntity<Object> applySeller(@RequestHeader String authorization)throws Exception {
-//         Map<String, String> map = new HashMap<>();
-//        try{
-//            String decodedToken = jwt.VerifyToken(authorization);
-//
-//            User user = userService.findOneByUserId(decodedToken);
-//
-//            if(user.getUserType().equals("판매회원")){
-//                map.put("result", "이미 판매회원입니다.");
-//                return new ResponseEntity<>(map, HttpStatus.OK);
-//            }
-//
-//            if(user.getUserType().equals("일반회원")){
-//                user.setUserType("판매회원");
-//            }
-//
-//            userService.saveUser(user);
-//            map.put("result", "판매회원 전환 성공");
-//        }catch(Exception e){
-//            map.put("error", e.toString());
-//        }
-//         return new ResponseEntity<>(map, HttpStatus.OK);
-//     }
 
      @PostMapping("/apply/stay")
      public ResponseEntity<Object> applyStay(@RequestHeader String authorization,
@@ -284,12 +266,19 @@ public class UserController {
     }
 
     @GetMapping("/my/reservation")
-    public ResponseEntity<Object> myReservation(@RequestHeader String authorization){
+    public ResponseEntity<Object> myReservation(@RequestHeader String authorization,
+                                                @RequestParam Integer page
+                                            ){
         Map<String, Object> map = new HashMap<>();
         try{
+            Integer offset = 0;
+            if(page > 1 ){
+                offset = page-1;
+            }
+
             String decodedToken = jwt.VerifyToken(authorization);
 
-            List<Reservation> reservationList = stayService.findAllByUserId(decodedToken);
+            List<Reservation> reservationList = stayService.findAllByUserId(decodedToken, offset);
 
             map.put("result", reservationList);
         }catch(Exception e){
@@ -457,13 +446,14 @@ public class UserController {
 
     @PostMapping("/write/review")
     public ResponseEntity<Object> writeReview(@RequestHeader String authorization,
-                                              @RequestBody Review req){
+                                              @ModelAttribute Review req,
+                                              @RequestPart(required = false) MultipartFile[] image){
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
 
             Reservation reservation = stayService.findOneReservationById(req.getReservationId());
-
+            
             if(!(reservation.getUserId().equals(decodedToken))){
                 map.put("result", "구매자만 리뷰를 작성할 수 있습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
@@ -479,9 +469,19 @@ public class UserController {
             req.setId(shrotUUID);
             req.setUserId(decodedToken);
 
-            commentService.checkReviewExist(req.getReservationId());
+            if(image != null){
+                List<String> images = imageRegister.CreateImages(image);
+                String multiImages = String.join(",", images);
 
+                req.setImg(multiImages);
+            }else{
+                req.setImg(null);
+            }
+
+
+            commentService.checkReviewExist(req.getReservationId());
             commentService.writeReview(req);
+
             map.put("result", "리뷰 작성 완료");
         }catch(Exception e){
             map.put("error", e.toString());
@@ -492,14 +492,18 @@ public class UserController {
 
     @PostMapping("/modify/review")
     public ResponseEntity<Object> modifyReview(@RequestHeader String authorization,
-                                              @RequestBody Review req){
+                                               @ModelAttribute Review req,
+                                               @RequestPart(required = false) MultipartFile[] image,
+                                               @RequestPart(required = false) String deleteImage){
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
 
-            Review review = commentService.findOneByReviewId(req.getId());
+            Review previousReview = commentService.findOneByReviewId(req.getId());
 
-            if(!(review.getUserId().equals(decodedToken))){
+            System.out.println(deleteImage);
+
+            if(!(previousReview.getUserId().equals(decodedToken))){
                 map.put("result", "작성자만 리뷰를 수정할 수 있습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
@@ -508,12 +512,40 @@ public class UserController {
                 map.put("result", "점수는 1부터 5까지 입력가능합니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
-            
 
-            review.setRating(req.getRating());
-            review.setDescription(req.getDescription());
 
-            commentService.writeReview(review);
+            //기존이미지 담음
+            List<String> previousImages = null;
+            if(previousReview.getImg() != null){
+                previousImages = List.of(previousReview.getImg().split(","));
+            }
+
+
+            List<String> modifyImages = new ArrayList<>(previousImages);
+
+            //삭제할 이미지가 있으면
+//            if(req.getDeleteImage() != null){
+//                List<String> deleteImages = List.of(req.getDeleteImage().split(","));
+//                for(String img : deleteImages){
+//                    //기존이미지에서 삭제
+//                    modifyImages.remove(img);
+//                    //경로 찾아 파일 삭제
+//                    imageRegister.DeleteFile(img);
+//                }
+//            }
+
+            //추가로 이미지 삽입
+            if(image != null){
+                List<String> images = imageRegister.CreateImages(image);
+                modifyImages.addAll(images);
+            }
+            String finalImage = String.join(",", modifyImages);
+            req.setImg(finalImage);
+
+            previousReview.setRating(req.getRating());
+            previousReview.setDescription(req.getDescription());
+
+            commentService.writeReview(previousReview);
             map.put("result", "리뷰 수정 완료");
         }catch(Exception e){
             map.put("error", e.toString());
@@ -547,11 +579,17 @@ public class UserController {
 
 
     //관리자 API 리스트
-    @GetMapping("/admin/staylist")
+    @GetMapping("/admin/stay/list")
     public ResponseEntity<Object> stayListByAdmin (@RequestHeader  String authorization,
+                                              @RequestParam Integer page,
                                               @RequestParam(value="allowed", required=false) boolean allwoed)throws Exception {
         Map<String, Object> map = new HashMap<>();
         try{
+            Integer offset = 0;
+            if(page > 1 ){
+                offset = page-1;
+            }
+
             String decodedToken = jwt.VerifyToken(authorization);
 
             User user = userService.findOneByUserId(decodedToken);
@@ -562,19 +600,19 @@ public class UserController {
             }
 
 
+
             if(allwoed){
-                List<Stay> allowedList = stayService.getAllStayList(allwoed);
+                List<Stay> allowedList = stayService.getAllowedSortStayList(allwoed, offset);
+                System.out.println("allowed");
                 map.put("result", allowedList);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             } else if(!allwoed){
-                List<Stay> allowedList = stayService.getAllStayList(allwoed);
+                List<Stay> allowedList = stayService.getAllowedSortStayList(allwoed, offset);
+                System.out.println("!allowed");
                 map.put("result", allowedList);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-            List<Stay> sellerList = stayService.getStayList();
-
-            map.put("result", sellerList);
         }catch(Exception e){
             map.put("error", e.toString());
         }
@@ -618,25 +656,22 @@ public class UserController {
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-            User reqUser = userService.findOneByUserId(req.getUserId());
+            User banUser = userService.findOneByUserId(req.getUserId());
+            System.out.println(banUser);
 
-            reqUser.setBanned(true);
-            userService.saveUser(reqUser);
+            banUser.setBanned(true);
+            userService.saveUser(banUser);
 
             //각각 stayid 로 쿼리문을 사용해서 Allowed를 한번에 false로 업데이트 해주면됨
-            List<Stay> stayList = stayService.getStayListByUserId(reqUser.getUserId());
-            //각각 stayid 로 쿼리문을 사용해서 Allowed를 한번에 false로 업데이트 해주면됨
+            List<Stay> stayList = stayService.getStayListByUserId(banUser.getUserId());
+            List<String> stayIds = new ArrayList<>();
             for(Stay stay : stayList){
-                stay.setAllowed(false);
-                List<Room> roomList = stayService.getRoomListByStayId(stay.getId());
-                for(Room room : roomList){
-                    stayService.closedRoom(room);
-                }
-                stayService.applyStay(stay);
+                stayIds.add(stay.getId());
             }
+            stayService.updateStaysFalse(stayIds);
+            stayService.updateRoomsFalse(stayIds);
 
             map.put("result", "reqUser가 밴 되었으며, reqUser의 숙소와 객실이 잠겼습니다.");
-            //숙소, 객실 밴 처리, 숙소가 2개일경우 ?
         }catch(Exception e){
             map.put("error", e.toString());
         }

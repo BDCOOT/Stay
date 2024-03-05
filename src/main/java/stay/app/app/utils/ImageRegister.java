@@ -20,7 +20,7 @@ public class ImageRegister {
 
         for (MultipartFile image1 : image) {
             // 1. 파일 저장 경로 설정 : 실제 서비스되는 위치(프로젝트 외부에 저장)
-            String uploadPath = "C:\\Users\\peter\\OneDrive\\바탕 화면\\localproject\\post\\src\\main\\java\\com\\example\\post\\imageUpload\\";
+            String uploadPath = "C:\\Users\\peter\\OneDrive\\바탕 화면\\stay\\src\\main\\java\\stay\\app\\app\\imageUpload\\";
             // 2. 원본 파일 이름 알아오기
             String originalFileName = image1.getOriginalFilename();
             // 3. 파일 이름 중복되지 않게 이름 변경(서버에 저장할 이름) UUID 사용
