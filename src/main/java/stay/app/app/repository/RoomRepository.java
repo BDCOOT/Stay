@@ -17,6 +17,8 @@ public interface RoomRepository extends JpaRepository<Room, String> {
 
     Room findOneById(String id);
 
+    void deleteRoomById(String id);
+
     @Modifying
     @Query("UPDATE Room r SET r.allowed = :allowed WHERE r.stayId IN :stayIdList")
     void updateAllowedByStayIdList(@Param("allowed") boolean allowed, @Param("stayIdList") List<String> stayIdList);

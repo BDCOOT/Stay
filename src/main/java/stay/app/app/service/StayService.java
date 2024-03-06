@@ -129,7 +129,15 @@ public class StayService {
         }
     }
 
+    @Transactional
+    public void deleteRoom(String id) throws Exception{
+        try{
+            roomRepository.deleteRoomById(id);
+        }catch(Exception e){
+            throw new Exception(e);
+        }
 
+    }
     //스테이아이디 포함안했을때
     public List<Room> getCheckInAvailableRooms(LocalDateTime checkIn, LocalDateTime checkOut,String limited, Integer offset) throws Exception{
         try{

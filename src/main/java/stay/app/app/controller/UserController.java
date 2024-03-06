@@ -206,7 +206,7 @@ public class UserController {
 
     @PostMapping("/reservation/room")
     public ResponseEntity<Object> reservationRoom(@RequestHeader String authorization,
-                                                  @RequestBody Reservation req){
+                                                  @RequestBody Reservation req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -244,7 +244,7 @@ public class UserController {
 
     @PostMapping("/reservation/cancel")
     public ResponseEntity<Object> reservationCancel(@RequestHeader String authorization,
-                                                  @RequestBody Reservation req){
+                                                  @RequestBody Reservation req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -268,7 +268,7 @@ public class UserController {
     @GetMapping("/my/reservation")
     public ResponseEntity<Object> myReservation(@RequestHeader String authorization,
                                                 @RequestParam Integer page
-                                            ){
+                                            )throws Exception{
         Map<String, Object> map = new HashMap<>();
         try{
             Integer offset = 0;
@@ -289,7 +289,7 @@ public class UserController {
 
     @PostMapping("/add/cart")
     public ResponseEntity<Object> addCart(@RequestHeader String authorization,
-                                                  @RequestBody Cart req){
+                                                  @RequestBody Cart req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -308,7 +308,7 @@ public class UserController {
 
     @PostMapping("/delete/cart")
     public ResponseEntity<Object> deleteCart(@RequestHeader String authorization,
-                                                  @RequestBody Cart req){
+                                                  @RequestBody Cart req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -396,7 +396,7 @@ public class UserController {
 
     @PostMapping("/write/recomment")
     public ResponseEntity<Object> writeRecomment(@RequestHeader String authorization,
-                                                  @RequestBody Recomment req){
+                                                  @RequestBody Recomment req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -423,7 +423,7 @@ public class UserController {
 
     @PostMapping("/delete/recomment")
     public ResponseEntity<Object> deleteRecomment(@RequestHeader String authorization,
-                                                 @RequestBody Recomment req){
+                                                 @RequestBody Recomment req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -447,7 +447,7 @@ public class UserController {
     @PostMapping("/write/review")
     public ResponseEntity<Object> writeReview(@RequestHeader String authorization,
                                               @ModelAttribute Review req,
-                                              @RequestPart(required = false) MultipartFile[] image){
+                                              @RequestPart(required = false) MultipartFile[] image)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -494,16 +494,15 @@ public class UserController {
     public ResponseEntity<Object> modifyReview(@RequestHeader String authorization,
                                                @ModelAttribute Review req,
                                                @RequestPart(required = false) MultipartFile[] image,
-                                               @RequestPart(required = false) String deleteImage){
+                                               @RequestPart(required = false) String deleteImage)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
 
-            Review previousReview = commentService.findOneByReviewId(req.getId());
+            Review review = commentService.findOneByReviewId(req.getId());
 
-            System.out.println(deleteImage);
 
-            if(!(previousReview.getUserId().equals(decodedToken))){
+            if(!(review.getUserId().equals(decodedToken))){
                 map.put("result", "작성자만 리뷰를 수정할 수 있습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
@@ -513,26 +512,23 @@ public class UserController {
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-
             //기존이미지 담음
             List<String> previousImages = null;
-            if(previousReview.getImg() != null){
-                previousImages = List.of(previousReview.getImg().split(","));
+            if(review.getImg() != null){
+                previousImages = List.of(review.getImg().split(","));
             }
-
 
             List<String> modifyImages = new ArrayList<>(previousImages);
 
-            //삭제할 이미지가 있으면
-//            if(req.getDeleteImage() != null){
-//                List<String> deleteImages = List.of(req.getDeleteImage().split(","));
-//                for(String img : deleteImages){
-//                    //기존이미지에서 삭제
-//                    modifyImages.remove(img);
-//                    //경로 찾아 파일 삭제
-//                    imageRegister.DeleteFile(img);
-//                }
-//            }
+            if(deleteImage != null){
+                List<String> deleteImages = List.of(deleteImage.split(","));
+                for(String img : deleteImages){
+                    //기존이미지에서 삭제
+                    modifyImages.remove(img);
+                    //경로 찾아 파일 삭제
+                    imageRegister.DeleteFile(img);
+                }
+            }
 
             //추가로 이미지 삽입
             if(image != null){
@@ -540,12 +536,12 @@ public class UserController {
                 modifyImages.addAll(images);
             }
             String finalImage = String.join(",", modifyImages);
-            req.setImg(finalImage);
+            review.setImg(finalImage);
 
-            previousReview.setRating(req.getRating());
-            previousReview.setDescription(req.getDescription());
+            review.setRating(req.getRating());
+            review.setDescription(req.getDescription());
 
-            commentService.writeReview(previousReview);
+            commentService.writeReview(review);
             map.put("result", "리뷰 수정 완료");
         }catch(Exception e){
             map.put("error", e.toString());
@@ -555,7 +551,8 @@ public class UserController {
 
     @PostMapping("/delete/review")
     public ResponseEntity<Object> deleteReview(@RequestHeader String authorization,
-                                               @RequestBody Review req){
+                                               @ModelAttribute Review req,
+                                               @RequestPart(required = false) String deleteImage){
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -566,6 +563,14 @@ public class UserController {
                 map.put("result", "작성자만 리뷰를 삭제할 수 있습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
+
+            if(review.getImg() != null){
+                List<String> deleteImages = List.of(deleteImage.split(","));
+                for(String img : deleteImages){
+                    imageRegister.DeleteFile(img);
+                }
+            }
+
 
             commentService.deleteByReviewId(req.getId());
             map.put("result", "리뷰 삭제 완료");
@@ -645,7 +650,7 @@ public class UserController {
 
     @PostMapping("/admin/ban")
     public ResponseEntity<Object> userBanByAdmin(@RequestHeader String authorization,
-                                                  @RequestBody User req){
+                                                  @RequestBody User req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -681,7 +686,7 @@ public class UserController {
 
     @PostMapping("/admin/delete/stay")
     public ResponseEntity<Object> deleteStayByAdmin(@RequestHeader String authorization,
-                                                  @RequestBody User req){
+                                                  @RequestBody User req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -711,7 +716,9 @@ public class UserController {
 
     @PostMapping("/admin/delete/review")
     public ResponseEntity<Object> deleteReviewByAdmin(@RequestHeader String authorization,
-                                                 @RequestBody Review req){
+                                                      @ModelAttribute Review req,
+                                                      @RequestPart(required = false) MultipartFile[] image,
+                                                      @RequestPart(required = false) String deleteImage)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -721,9 +728,16 @@ public class UserController {
                 map.put("result", "관리자만 접근할 수 있습니다.");
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
-            
+
+            if(deleteImage != null) {
+                List<String> deleteImages = List.of(deleteImage.split(","));
+                for(String img : deleteImages){
+                    imageRegister.DeleteFile(img);;
+                }
+            }
+
             commentService.deleteByReviewId(req.getId());
-            map.put("result", "관리자만 권한으로 리뷰 삭제 성공");
+            map.put("result", "관리자 권한으로 리뷰 삭제 성공");
         }catch(Exception e){
             map.put("error", e.toString());
         }
@@ -732,7 +746,7 @@ public class UserController {
 
     @PostMapping("/admin/cancel/reservation")
     public ResponseEntity<Object> cancelReservationByAdmin(@RequestHeader String authorization,
-                                               @RequestBody Reservation req){
+                                               @RequestBody Reservation req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);

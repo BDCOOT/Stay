@@ -39,7 +39,7 @@ public class StayController {
     @PostMapping("/add/room")
     public ResponseEntity<Object> addRoom(@RequestHeader String authorization,
                                           @ModelAttribute Room req,
-                                          @RequestPart(required = false) MultipartFile[] image){
+                                          @RequestPart(required = false) MultipartFile[] image)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String shortUUID = generatedId.shortUUID();
@@ -71,8 +71,98 @@ public class StayController {
         return new ResponseEntity<>(map,HttpStatus.OK);
     }
 
+    @PostMapping("/modify/room")
+    public ResponseEntity<Object> modifyRoom(@RequestHeader String authorization,
+                                             @ModelAttribute Room req,
+                                             @RequestPart(required = false) MultipartFile[] image,
+                                             @RequestPart(required = false) String deleteImage)throws Exception{
+        Map<String, String> map = new HashMap<>();
+        try{
+            String decodedToeken = jwt.VerifyToken(authorization);
+
+            Stay stay = stayService.findOneById(req.getStayId());
+
+            Room room = stayService.findOneByRoomId(req.getId());
+
+
+
+            if(!(stay.getUserId().equals(decodedToeken))){
+                map.put("result", "숙소 주인만 수정할 수 있습니다.");
+                return new ResponseEntity<>(map,HttpStatus.OK);
+            }
+
+            List<String> previousImages = null;
+            if(room.getImg() != null){
+                previousImages = List.of(room.getImg().split(","));
+            }
+
+            List<String> modifyImages = new ArrayList<>(previousImages);
+
+            if(deleteImage != null){
+                List<String> deleteImages = List.of(deleteImage.split(","));
+                for(String img : deleteImages){
+                    modifyImages.remove(img);
+                    imageRegister.DeleteFile(img);
+                }
+            }
+
+
+
+            if(image != null){
+                List<String> images = imageRegister.CreateImages(image);
+                modifyImages.addAll(images);
+            }
+            String finalImage = String.join(",", modifyImages);
+            room.setImg(finalImage);
+
+            room.setRoomName(req.getRoomName());
+            room.setBed(req.getBed());
+            room.setPrice(req.getPrice());
+            room.setLimited(req.getLimited());
+            room.setDescription(req.getDescription());
+
+            stayService.addRoom(room);
+            map.put("result", "객실 수정 성공");
+        }catch(Exception e){
+            map.put("error", e.toString());
+        }
+        return new ResponseEntity<>(map,HttpStatus.OK);
+    }
+
+
+    @PostMapping("/delete/room")
+    public ResponseEntity<Object> deleteRoom(@RequestHeader String authorization,
+                                             @RequestBody Room req) throws Exception{
+        Map<String, String> map = new HashMap<>();
+        try{
+            String decodedToeken = jwt.VerifyToken(authorization);
+
+            Stay stay = stayService.findOneById(req.getStayId());
+
+            Room room = stayService.findOneByRoomId(req.getId());
+
+
+            if(!(stay.getUserId().equals(decodedToeken))){
+                map.put("result", "숙소 주인만 삭제할 수 있습니다.");
+                return new ResponseEntity<>(map,HttpStatus.OK);
+            }
+
+            if(room.getImg() != null){
+                List<String> deleteImages = List.of(room.getImg().split(","));
+                for(String img : deleteImages){
+                    imageRegister.DeleteFile(img);
+                }
+            }
+            stayService.deleteRoom(req.getId());
+            map.put("result", "객실 삭제 성공");
+        }catch(Exception e){
+            map.put("error", e.toString());
+        }
+        return new ResponseEntity<>(map,HttpStatus.OK);
+    }
+
     @PostMapping("/permit/reservation")
-    public ResponseEntity<Object> permitReservation(@RequestHeader String authorization, @RequestBody Reservation req){
+    public ResponseEntity<Object> permitReservation(@RequestHeader String authorization, @RequestBody Reservation req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             Reservation reservation = stayService.findOneReservationById(req.getId());
@@ -98,7 +188,7 @@ public class StayController {
 
 
     @PostMapping("/cancel/reservation")
-    public ResponseEntity<Object> cancelReservation(@RequestHeader String authorization, @RequestBody Reservation req){
+    public ResponseEntity<Object> cancelReservation(@RequestHeader String authorization, @RequestBody Reservation req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             Reservation reservation = stayService.findOneReservationById(req.getId());
@@ -227,7 +317,7 @@ public class StayController {
 
     @PostMapping("/closed/room")
     public ResponseEntity<Object> closedRoom(@RequestHeader String authorization,
-                                                  @RequestBody Room req){
+                                                  @RequestBody Room req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -251,7 +341,7 @@ public class StayController {
 
     @PostMapping("/open/room")
     public ResponseEntity<Object> openRoom(@RequestHeader String authorization,
-                                             @RequestBody Room req){
+                                             @RequestBody Room req)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -275,7 +365,7 @@ public class StayController {
     @GetMapping("/reservation/list")
     public ResponseEntity<Object> reservationList(@RequestHeader String authorization,
                                                   @RequestParam String stayId,
-                                                  @RequestParam Integer page){
+                                                  @RequestParam Integer page)throws Exception{
         Map<String, Object> map = new HashMap<>();
         try{
             Integer offset = 0;
@@ -305,7 +395,7 @@ public class StayController {
     public ResponseEntity<Object> getRevenue(@RequestHeader String authorization,
                                              @RequestParam("stayId") String stayId,
                                              @RequestParam(value="startDate", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
-                                             @RequestParam(value="endDate", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate){
+                                             @RequestParam(value="endDate", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -330,20 +420,6 @@ public class StayController {
         }
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
-
-    //    @PostMapping("/")
-//    public ResponseEntity<Object> method(@RequestHeader String Authorization,
-//                                                  @RequestBody Reservation req){
-//        Map<String, String> map = new HashMap<>();
-//        try{
-//
-//        }catch(Exception e){
-//            map.put("error", e.toString());
-//        }
-//        return new ResponseEntity<>(map, HttpStatus.OK);
-//    }
-
-
 
 
 }//class
