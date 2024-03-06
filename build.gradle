@@ -38,3 +38,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// cmd - cd app => ./gradlew bootJar // location is gradlew exists path // build lip 에 app.jar 이 생성되고 이걸 도커파일이랑 같은 위치에 둔다.
+bootJar {
+    archiveFileName= "app.jar"
+}
