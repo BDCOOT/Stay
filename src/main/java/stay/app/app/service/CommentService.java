@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import stay.app.app.models.Comment;
 import stay.app.app.models.Recomment;
-import stay.app.app.models.Reservation;
 import stay.app.app.models.Review;
 import stay.app.app.repository.CommentRepository;
 import stay.app.app.repository.RecommentRepository;

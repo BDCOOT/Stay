@@ -3,7 +3,6 @@ package stay.app.app.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import stay.app.app.models.*;
 import stay.app.app.service.StayService;
-import stay.app.app.service.UserService;
 import stay.app.app.utils.GeneratedId;
 import stay.app.app.utils.ImageRegister;
 import stay.app.app.utils.Jwt;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -408,12 +405,12 @@ public class StayController {
             }
 
             if(startDate == null || endDate == null){
-                int revenue = stayService.revenueByStay(stayId);
+                int revenue = stayService.getRevenueByStay(stayId);
                 map.put("result", String.valueOf(revenue));
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-            int revenue = stayService.revenueSortDate(stayId, startDate, endDate);
+            int revenue = stayService.getRevenueSortDate(stayId, startDate, endDate);
             map.put("result", String.valueOf(revenue));
         }catch(Exception e){
             map.put("error", e.toString());

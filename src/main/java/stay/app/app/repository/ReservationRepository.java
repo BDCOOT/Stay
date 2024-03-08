@@ -31,5 +31,4 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
 
     @Query("SELECT SUM(price) FROM Reservation  WHERE stayId = :stayId")
     Integer revenueForStayById(@Param("stayId") String stayId);
-
 }

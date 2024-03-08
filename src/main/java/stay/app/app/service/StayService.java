@@ -1,17 +1,14 @@
 package stay.app.app.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.querydsl.QPageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import stay.app.app.models.*;
 import stay.app.app.repository.*;
 import stay.app.app.utils.MileagePer;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -324,7 +321,7 @@ public class StayService {
     }
 
 
-    public int revenueByStay(String stayId) throws Exception{
+    public int getRevenueByStay(String stayId) throws Exception{
         try{
             return reservationRepository.revenueForStayById(stayId);
         }catch(Exception e){
@@ -332,7 +329,7 @@ public class StayService {
         }
     }
 
-    public int revenueSortDate(String stayId, LocalDateTime startDate, LocalDateTime endDate) throws Exception{
+    public int getRevenueSortDate(String stayId, LocalDateTime startDate, LocalDateTime endDate) throws Exception{
         try{
             return reservationRepository.revenueForStayByDateRange(stayId, startDate, endDate);
         }catch(Exception e){

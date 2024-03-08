@@ -1,16 +1,13 @@
 package stay.app.app.controller;
 
-import lombok.Generated;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.parser.Authorization;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import stay.app.app.models.*;
-import stay.app.app.repository.UserRepository;
 import stay.app.app.service.CommentService;
 import stay.app.app.service.StayService;
 import stay.app.app.service.UserService;
@@ -36,6 +33,17 @@ public class UserController {
     private final GeneratedId generatedId;
     private final Jwt jwt;
     private final Bcrypt bcrypt;
+
+    @PostMapping("/hello")
+    public ResponseEntity<Object> hello()throws Exception{
+        Map<String,String> map = new HashMap<>();
+        try{
+            map.put("result", "hello");
+        }catch(Exception e){
+            map.put("error", e.toString());
+        }
+        return new ResponseEntity<>(map, HttpStatus.OK);
+    }
 
     //회원가입
     @PostMapping("/signup")

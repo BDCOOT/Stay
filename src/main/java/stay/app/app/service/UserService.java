@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import stay.app.app.models.Cart;
 import stay.app.app.models.Mileage;
-import stay.app.app.models.Stay;
 import stay.app.app.models.User;
 import stay.app.app.repository.CartRepository;
 import stay.app.app.repository.MileageRepository;
@@ -13,9 +12,6 @@ import stay.app.app.repository.StayRepository;
 import stay.app.app.repository.UserRepository;
 import stay.app.app.utils.Bcrypt;
 import stay.app.app.utils.GeneratedId;
-
-import java.util.List;
-
 
 @Service
 @Transactional(readOnly = true)

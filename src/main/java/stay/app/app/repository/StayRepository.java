@@ -34,14 +34,6 @@ public interface StayRepository extends JpaRepository<Stay, String> {
     @Query("UPDATE Stay s SET s.allowed = :allowed WHERE s.id IN :idList")
     void updateAllowedByStayIdList(@Param("allowed") boolean allowed, @Param("idList") List<String> idList);
 
-    //String으로 Id만 받아오는게 안되는데
-//    List<String> findAllIdsByUserId(String userId);
-
-//    @Query("SELECT s.id FROM Stay s WHERE s.userId = :userId")
-//    List<String> findAllStayIdsByUserId(@Param("userId") String userId);
-
     void deleteAllByUserId(String userId);
-
-    //    void deleteByIdIn(List<String> idList);
 
 }
