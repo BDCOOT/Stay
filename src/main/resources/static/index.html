@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Signup/Login</title>
+</head>
+<body>
+<h1>User Signup/Login</h1>
+
+<!-- Signup Form -->
+<h2>Signup</h2>
+<form id="signupForm">
+    <label for="userId">User ID:</label>
+    <input type="text" id="userId" name="userId" required><br><br>
+
+    <label for="userName">Username:</label>
+    <input type="text" id="userName" name="userName" required><br><br>
+
+    <label for="appKey">Password:</label>
+    <input type="password" id="appKey" name="appKey" required><br><br>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <label for="phone">Phone:</label>
+    <input type="text" id="phone" name="phone"><br><br>
+
+    <label for="gender">Gender:</label>
+    <select id="gender" name="gender">
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+    </select><br><br>
+
+    <label for="birth">Birth:</label>
+    <input type="date" id="birth" name="birth"><br><br>
+
+    <button type="submit">Signup</button>
+</form>
+
+<!-- Signin Form -->
+<h2>Signin</h2>
+<form id="signinForm">
+    <label for="userIdSignin">User ID:</label>
+    <input type="text" id="userIdSignin" name="userIdSignin" required><br><br>
+
+    <label for="appKeySignin">Password:</label>
+    <input type="password" id="appKeySignin" name="appKeySignin" required><br><br>
+
+    <button type="submit">Signin</button>
+</form>
+
+<script>
+    // Signup Form Submission
+    document.getElementById("signupForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("/api/v1/user/signup", {
+            method: "POST",
+            body: JSON.stringify(Object.fromEntries(formData)),
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                alert(data.result);
+            })
+            .catch(error => console.error("Error:", error));
+    });
+
+    // Signin Form Submission
+    document.getElementById("signinForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("/api/v1/user/signin", {
+            method: "POST",
+            body: JSON.stringify(Object.fromEntries(formData)),
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.authorization) {
+                    alert("Login Successful!\nAuthorization Token: " + data.authorization);
+                } else {
+                    alert(data.result);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    });
+</script>
+</body>
+</html>

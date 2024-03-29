@@ -11,4 +11,3 @@ ENV JAVA_OPS=""
 RUN test -f "application.properties" && \ export SPRING_CONFIG_LOCATION = "file:/app/application.properties" || true
                           ## 컨테이너를 생성 및 실행할 때 사용할 명령어 (CMD: 컨테이너를 생성할 때만 실행된다.)
 CMD ["java", "-jar", "app.jar"]
-

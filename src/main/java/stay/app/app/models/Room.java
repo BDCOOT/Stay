@@ -25,6 +25,8 @@ public class Room extends BaseEntity{
     private boolean reservationStatus;
     private boolean allowed;
     private String img;
+
+
 //
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "stay_id", referencedColumnName = "id", insertable = false, updatable = false)

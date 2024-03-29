@@ -11,10 +11,7 @@ import stay.app.app.models.*;
 import stay.app.app.service.CommentService;
 import stay.app.app.service.StayService;
 import stay.app.app.service.UserService;
-import stay.app.app.utils.Bcrypt;
-import stay.app.app.utils.GeneratedId;
-import stay.app.app.utils.ImageRegister;
-import stay.app.app.utils.Jwt;
+import stay.app.app.utils.*;
 
 import java.util.*;
 
@@ -25,6 +22,7 @@ import java.util.*;
 @RequestMapping("/api/v1/user")
 public class UserController {
 
+    private final S3Service s3Service;
     private final UserService userService;
     private final StayService stayService;
     private final CommentService commentService;
@@ -50,6 +48,7 @@ public class UserController {
     public ResponseEntity<Object> signUp(@RequestBody User req)throws Exception  {
         Map<String, String> map = new HashMap<>();
         try {
+
             String shortUUID = generatedId.shortUUID();
             String hashPassword = bcrypt.HashPassword(req.getAppKey());
             req.setId(shortUUID);
@@ -455,7 +454,7 @@ public class UserController {
     @PostMapping("/write/review")
     public ResponseEntity<Object> writeReview(@RequestHeader String authorization,
                                               @ModelAttribute Review req,
-                                              @RequestPart(required = false) MultipartFile[] image)throws Exception{
+                                              @RequestPart(required = false) MultipartFile image)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -478,10 +477,12 @@ public class UserController {
             req.setUserId(decodedToken);
 
             if(image != null){
-                List<String> images = imageRegister.CreateImages(image);
-                String multiImages = String.join(",", images);
 
-                req.setImg(multiImages);
+                req.setImg(s3Service.uploadFile(image));
+//                List<String> images = imageRegister.CreateImages(image);
+//                String multiImages = String.join(",", images);
+
+//                req.setImg(multiImages);
             }else{
                 req.setImg(null);
             }
