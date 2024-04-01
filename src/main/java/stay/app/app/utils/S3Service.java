@@ -29,7 +29,7 @@ public class S3Service {
     @Value("${cloud.aws.s3.bucketName}")
     private String bucketName;
 
-    private String dir = "/images";
+    private String dir = "/image";
     private String defaultUrl = "https://yunbaebucket";
 
     public String uploadFile(MultipartFile file) throws IOException {
