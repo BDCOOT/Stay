@@ -13,6 +13,7 @@ import stay.app.app.service.StayService;
 import stay.app.app.utils.GeneratedId;
 import stay.app.app.utils.ImageRegister;
 import stay.app.app.utils.Jwt;
+import stay.app.app.utils.S3Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.Map;
 public class StayController {
 
     private final StayService stayService;
-
+    private final S3Service s3Service;
     private final GeneratedId generatedId;
     private final Jwt jwt;
     private final ImageRegister imageRegister;
@@ -36,7 +37,7 @@ public class StayController {
     @PostMapping("/add/room")
     public ResponseEntity<Object> addRoom(@RequestHeader String authorization,
                                           @ModelAttribute Room req,
-                                          @RequestPart(required = false) MultipartFile[] image)throws Exception{
+                                          @RequestPart(required = false) MultipartFile[] images)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String shortUUID = generatedId.shortUUID();
@@ -51,11 +52,17 @@ public class StayController {
                 return new ResponseEntity<>(map,HttpStatus.OK);
             }
 
-            if(image != null){
-                List<String> images = imageRegister.CreateImages(image);
-                String multiImages = String.join(",", images);
+            if(images != null){
+                List<String> fileNames = new ArrayList<>();
 
-                req.setImg(multiImages);
+                for(MultipartFile img : images){
+
+                    String filePathAndName = s3Service.uploadFile(img);
+                    fileNames.add(filePathAndName);
+                }
+                String dbSaveImages = String.join(",", fileNames);
+
+                req.setImg(dbSaveImages);
             }else{
                 req.setImg(null);
             }
@@ -71,7 +78,7 @@ public class StayController {
     @PostMapping("/modify/room")
     public ResponseEntity<Object> modifyRoom(@RequestHeader String authorization,
                                              @ModelAttribute Room req,
-                                             @RequestPart(required = false) MultipartFile[] image,
+                                             @RequestPart(required = false) MultipartFile[] images,
                                              @RequestPart(required = false) String deleteImage)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
@@ -88,29 +95,26 @@ public class StayController {
                 return new ResponseEntity<>(map,HttpStatus.OK);
             }
 
-            List<String> previousImages = null;
-            if(room.getImg() != null){
-                previousImages = List.of(room.getImg().split(","));
-            }
-
-            List<String> modifyImages = new ArrayList<>(previousImages);
-
             if(deleteImage != null){
                 List<String> deleteImages = List.of(deleteImage.split(","));
                 for(String img : deleteImages){
-                    modifyImages.remove(img);
-                    imageRegister.DeleteFile(img);
+                    s3Service.deleteFile(img);
                 }
             }
 
+            //추가로 이미지 삽입
+            if(images != null){
+                List<String> fileNames = new ArrayList<>();
 
+                for(MultipartFile img : images){
 
-            if(image != null){
-                List<String> images = imageRegister.CreateImages(image);
-                modifyImages.addAll(images);
+                    String filePathAndName = s3Service.uploadFile(img);
+                    fileNames.add(filePathAndName);
+                }
+                String dbSaveImages = String.join(",", fileNames);
+
+                req.setImg(dbSaveImages);
             }
-            String finalImage = String.join(",", modifyImages);
-            room.setImg(finalImage);
 
             room.setRoomName(req.getRoomName());
             room.setBed(req.getBed());
@@ -147,7 +151,7 @@ public class StayController {
             if(room.getImg() != null){
                 List<String> deleteImages = List.of(room.getImg().split(","));
                 for(String img : deleteImages){
-                    imageRegister.DeleteFile(img);
+                    s3Service.deleteFile(img);
                 }
             }
             stayService.deleteRoom(req.getId());

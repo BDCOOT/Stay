@@ -1,6 +1,7 @@
 package stay.app.app.utils;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -15,9 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,7 +29,18 @@ public class S3Service {
     private String bucketName;
 
     private String dir = "/image";
-    private String defaultUrl = "https://yunbaebucket";
+    private String defaultUrl = "https://ybbucket14";
+
+
+    public void deleteFile(String fileName) throws IOException {
+        try {
+            int startIndex = fileName.indexOf("image/");
+            String fileKey = fileName.substring(startIndex);
+            amazonS3.deleteObject(bucketName, fileKey);
+        } catch (SdkClientException e) {
+            throw new IOException("Error deleting file from S3", e);
+        }
+    }
 
     public String uploadFile(MultipartFile file) throws IOException {
 

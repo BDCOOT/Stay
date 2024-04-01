@@ -454,10 +454,12 @@ public class UserController {
     @PostMapping("/write/review")
     public ResponseEntity<Object> writeReview(@RequestHeader String authorization,
                                               @ModelAttribute Review req,
-                                              @RequestPart(required = false) MultipartFile image)throws Exception{
+                                              @RequestPart(required = false) MultipartFile[] images)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
+
+            commentService.checkReviewExist(req.getReservationId());
 
             Reservation reservation = stayService.findOneReservationById(req.getReservationId());
             
@@ -476,19 +478,21 @@ public class UserController {
             req.setId(shrotUUID);
             req.setUserId(decodedToken);
 
-            if(image != null){
+            if(images != null){
+                List<String> fileNames = new ArrayList<>();
 
-                req.setImg(s3Service.uploadFile(image));
-//                List<String> images = imageRegister.CreateImages(image);
-//                String multiImages = String.join(",", images);
+                for(MultipartFile img : images){
 
-//                req.setImg(multiImages);
+                    String filePathAndName = s3Service.uploadFile(img);
+                    fileNames.add(filePathAndName);
+                }
+                String dbSaveImages = String.join(",", fileNames);
+
+                req.setImg(dbSaveImages);
             }else{
                 req.setImg(null);
             }
 
-
-            commentService.checkReviewExist(req.getReservationId());
             commentService.writeReview(req);
 
             map.put("result", "리뷰 작성 완료");
@@ -502,7 +506,7 @@ public class UserController {
     @PostMapping("/modify/review")
     public ResponseEntity<Object> modifyReview(@RequestHeader String authorization,
                                                @ModelAttribute Review req,
-                                               @RequestPart(required = false) MultipartFile[] image,
+                                               @RequestPart(required = false) MultipartFile[] images,
                                                @RequestPart(required = false) String deleteImage)throws Exception{
         Map<String, String> map = new HashMap<>();
         try{
@@ -521,31 +525,27 @@ public class UserController {
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
 
-            //기존이미지 담음
-            List<String> previousImages = null;
-            if(review.getImg() != null){
-                previousImages = List.of(review.getImg().split(","));
-            }
-
-            List<String> modifyImages = new ArrayList<>(previousImages);
 
             if(deleteImage != null){
                 List<String> deleteImages = List.of(deleteImage.split(","));
                 for(String img : deleteImages){
-                    //기존이미지에서 삭제
-                    modifyImages.remove(img);
-                    //경로 찾아 파일 삭제
-                    imageRegister.DeleteFile(img);
+                    s3Service.deleteFile(img);
                 }
             }
 
             //추가로 이미지 삽입
-            if(image != null){
-                List<String> images = imageRegister.CreateImages(image);
-                modifyImages.addAll(images);
+            if(images != null){
+                List<String> fileNames = new ArrayList<>();
+
+                for(MultipartFile img : images){
+
+                    String filePathAndName = s3Service.uploadFile(img);
+                    fileNames.add(filePathAndName);
+                }
+                String dbSaveImages = String.join(",", fileNames);
+
+                req.setImg(dbSaveImages);
             }
-            String finalImage = String.join(",", modifyImages);
-            review.setImg(finalImage);
 
             review.setRating(req.getRating());
             review.setDescription(req.getDescription());
@@ -560,8 +560,7 @@ public class UserController {
 
     @PostMapping("/delete/review")
     public ResponseEntity<Object> deleteReview(@RequestHeader String authorization,
-                                               @ModelAttribute Review req,
-                                               @RequestPart(required = false) String deleteImage){
+                                               @ModelAttribute Review req){
         Map<String, String> map = new HashMap<>();
         try{
             String decodedToken = jwt.VerifyToken(authorization);
@@ -574,9 +573,9 @@ public class UserController {
             }
 
             if(review.getImg() != null){
-                List<String> deleteImages = List.of(deleteImage.split(","));
+                List<String> deleteImages = List.of(review.getImg().split(","));
                 for(String img : deleteImages){
-                    imageRegister.DeleteFile(img);
+                    s3Service.deleteFile(img);
                 }
             }
 
@@ -741,7 +740,7 @@ public class UserController {
             if(deleteImage != null) {
                 List<String> deleteImages = List.of(deleteImage.split(","));
                 for(String img : deleteImages){
-                    imageRegister.DeleteFile(img);;
+                    s3Service.deleteFile(img);
                 }
             }
 
