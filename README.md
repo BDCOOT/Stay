@@ -16,25 +16,24 @@ Database: JPA, MySQL
 
 
 ## 구현
-        //회원가입
-    @PostMapping("/signup")
-    public ResponseEntity<Object> signUp(@RequestBody User req)throws Exception  {
-        Map<String, String> map = new HashMap<>();
-        try {
+ 회원가입
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/e66ceed4-24ae-44a8-8009-560926559ddf)
 
-            String shortUUID = generatedId.shortUUID();
-            String hashPassword = bcrypt.HashPassword(req.getAppKey());
-            req.setId(shortUUID);
-            req.setAppKey(hashPassword);
-            req.setGrade("bronze");
-            req.setUserType("일반회원");
-            req.setBanned(false);
 
-            userService.createMileage(req.getUserId());
-            userService.saveUser(req);
-            map.put("result", "회원 가입 성공");
-        } catch (Exception e) {
-            map.put("error", e.toString());
-        }
-        return new ResponseEntity<>(map, HttpStatus.OK);
-    }
+ 예약시 등급 별 적립(브론즈 1%, 실버 2%, 골드 3%, 플레티넘 4%, 다이아몬드 5%)
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/6c6f622d-b692-4d4e-967c-3bdd3741f003)
+
+ 예약 가능한 방 조회
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/00e5afd5-8bb5-43e6-ab54-f9fd769b6571)
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/21b977b7-4929-43c7-a951-e9f68075e495)
+
+ 숙소 별 매출액 조회
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/bfded140-ab1b-4d02-9325-adf44420a286)
+
+
+
+ 리뷰 작성(aws S3 내 이미지 삽입)
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/6c95b797-7ab0-4178-ad65-4c5bf64ad859)
+![image](https://github.com/BDCOOT/Stay/assets/94902010/17e0931f-0523-46e2-b4ea-a29333975fd6)
+
+
