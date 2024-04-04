@@ -16,7 +16,6 @@ Database: JPA, MySQL
 
 
 ## 구현
- 회원가입
  ![image](https://github.com/BDCOOT/Stay/assets/94902010/e66ceed4-24ae-44a8-8009-560926559ddf)
 
 
