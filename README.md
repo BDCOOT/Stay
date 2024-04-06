@@ -1,15 +1,15 @@
-# Stay - 개인 프로젝트
+# Shop - 개인 프로젝트
 
 ## 프로젝트 소개 
 
-&nbsp;숙박 업소 중개 플랫폼으로 가입한 회원들 중 판매회원은 숙박업소 등록 및 객실을 추가하여 관리할 수 있고
+&nbsp;전자 상거래 사이트로 회원가입 이후 판매자 신청을 통해 카테고리 분류, 수량, 가격 등을 책정하여 상품을 이미지와 함께 등록하고
 
-일반회원은 예약가능한 날짜를 조회하여 예약 및 결제금액에 따른 등급과 마일리지 적립을 하고 사용할 수 있습니다. 
+일반회원은 장바구니에 담고 문의를 남기거나 구매할 수 있습니다. 구매후에는 리뷰 작성또한 가능합니다.
 
-관리자는 숙소 ban 및 일반회원의 예약 취소, 악성 리뷰 삭제를 할 수 있습니다. 숙소 ban이 되면 일반회원이 객실을 예약하고자할 때 조회되지 않으며 예약이 불가능합니다.
+관리자는 회원 관리 및 공지사항을 작성하거나 상품을 삭제할 수 있습니다.
 
 ## 개발 기간 및 환경
-개발 기간 : 2024년 2월
+개발 기간 : 2024년 1월
 
 language : Java 17
 
@@ -25,23 +25,20 @@ ORM : JPA
 
 
 ## 구현
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/e66ceed4-24ae-44a8-8009-560926559ddf)
+ ProductMapper
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/11ddaea3-037d-4bc6-a3ed-8b4c60c3ec1a)
 
 
- 예약시 등급 별 적립(브론즈 1%, 실버 2%, 골드 3%, 플레티넘 4%, 다이아몬드 5%)
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/6c6f622d-b692-4d4e-967c-3bdd3741f003)
+ 비밀번호 변경
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/5f09ee42-cd84-4577-b92c-5c94e5067ae7)
 
- 예약 가능한 방 조회
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/00e5afd5-8bb5-43e6-ab54-f9fd769b6571)
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/21b977b7-4929-43c7-a951-e9f68075e495)
+ 리뷰 삭제
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/c4df1a2b-bdc3-4a3c-8276-bc5566792865)
 
- 숙소 별 매출액 조회
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/bfded140-ab1b-4d02-9325-adf44420a286)
+ 상품 수정
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/827aa8f5-6a50-41aa-812d-1eefe0b87173)
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/9c1f31f2-7d84-428f-9573-ec4ac86d43cb)
 
 
-
- 리뷰 작성(aws S3 내 이미지 삽입)
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/6c95b797-7ab0-4178-ad65-4c5bf64ad859)
-![image](https://github.com/BDCOOT/Stay/assets/94902010/17e0931f-0523-46e2-b4ea-a29333975fd6)
 
 
