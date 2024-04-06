@@ -26,20 +26,27 @@ ORM : JPA
 
 ## 구현
  ProductMapper
+
+ 
  ![image](https://github.com/BDCOOT/Stay/assets/94902010/11ddaea3-037d-4bc6-a3ed-8b4c60c3ec1a)
 
 
  비밀번호 변경
+
+ 
  ![image](https://github.com/BDCOOT/Stay/assets/94902010/5f09ee42-cd84-4577-b92c-5c94e5067ae7)
 
  
 
  리뷰 삭제
- ![image](https://github.com/BDCOOT/Stay/assets/94902010/c4df1a2b-bdc3-4a3c-8276-bc5566792865)
 
+ 
+ ![image](https://github.com/BDCOOT/Stay/assets/94902010/c4df1a2b-bdc3-4a3c-8276-bc5566792865)
  
 
  상품 수정
+
+ 
  ![image](https://github.com/BDCOOT/Stay/assets/94902010/827aa8f5-6a50-41aa-812d-1eefe0b87173)
  ![image](https://github.com/BDCOOT/Stay/assets/94902010/9c1f31f2-7d84-428f-9573-ec4ac86d43cb)
 
